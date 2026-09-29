@@ -683,6 +683,7 @@ function setFocus(v, opt={}){
   S.focus = v ? {kind: v[0], id: v.slice(2)} : null;
   focusSel.classList.toggle("active", !!v);
   renderTrack(); renderRoots(); drawOverlay(); kickOverlay();
+  if(!S.sel) renderPanel();
   if(opt.fly === false || !S.focus) return;
   if(S.focus.kind==="r"){ const c = CONT.find(x=>x[0]===S.focus.id); flyTo(c[2], c[3]); }
   else { const f = largestFeatureOf(S.focus.id); if(f) flyTo(f.lp); }
@@ -722,13 +723,41 @@ function playFrame(ts){
     const sp = +$("#speed").value;
     let nt = S.t + dt*sp;
     const ev = EV.find(e => e.mf > S.t && e.mf <= nt && inFocus(e));
-    if(ev){ nt = ev.mf; announce(ev); if(OPT.pause) hold = holdFor(sp); }
+    if(ev){
+      nt = ev.mf; announce(ev); if(OPT.pause) hold = holdFor(sp);
+      // 재생 범위를 골라 두었으면 오른쪽 패널에도 그 사건을 바로 띄운다
+      if(S.focus) select({type:"event", id:ev.id}, {noDate:true, noFly:true, noSheet:true});
+    }
     setT(nt);
     if(S.t >= MMAX + 0.999){ setPlaying(false); return; }
   }
   requestAnimationFrame(playFrame);
 }
 playBtn.onclick = () => setPlaying(!S.playing);
+// 스페이스바 = 재생/멈춤 (글 입력·선택 상자·뿌리 노드에서는 원래 동작)
+function spaceTarget(t){ return !(t.closest && (t.closest("input:not([type=range]),textarea,select,[contenteditable],.r-node"))); }
+document.addEventListener("keydown", ev => {
+  if(ev.key !== " " || ev.ctrlKey || ev.altKey || ev.metaKey || !spaceTarget(ev.target)) return;
+  ev.preventDefault();
+  if(!ev.repeat) setPlaying(!S.playing);
+});
+document.addEventListener("keyup", ev => { if(ev.key === " " && spaceTarget(ev.target)) ev.preventDefault(); });   // 포커스된 버튼이 눌리지 않게
+// ← → = 이전·다음 사건으로 이동 (재생 범위를 골랐으면 그 국가·대륙의 사건만)
+function stepEvent(dir){
+  const cur = S.sel && S.sel.type==="event" && EVI[S.sel.id] ? EVI[S.sel.id].mf : S.t;
+  const pool = EV.filter(inFocus);
+  const e = dir > 0 ? pool.find(x => x.mf > cur + 1e-9) : [...pool].reverse().find(x => x.mf < cur - 1e-9);
+  if(e) select({type:"event", id:e.id});
+}
+document.addEventListener("keydown", ev => {
+  if((ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") || ev.ctrlKey || ev.altKey || ev.metaKey || ev.shiftKey) return;
+  // 선택 상자는 ←→로 값이 바뀌므로 막고 사건 이동으로 쓴다 (↑↓는 선택 상자 그대로)
+  if(ev.target.closest && ev.target.closest("input:not([type=range]),textarea,[contenteditable]")) return;
+  ev.preventDefault();
+  stepEvent(ev.key === "ArrowRight" ? 1 : -1);
+});
+// 선택 상자에서 고른 뒤에는 포커스를 풀어 단축키가 선택 상자로 가지 않게 한다
+["#focus", "#speed"].forEach(q => $(q).addEventListener("change", ev => ev.target.blur()));
 
 /* ================= event card (shown as events happen during playback) ================= */
 const card = $("#evcard"); let cardTimer = 0;
@@ -835,7 +864,7 @@ function select(sel, opt={}){
   } else if(sel && sel.type==="ent" && opt.fly){
     const f = largestFeatureOf(sel.id); if(f) flyTo(f.lp);
   }
-  renderPanel(); openSheet(!!sel);
+  renderPanel(); if(!opt.noSheet) openSheet(!!sel);
   highlightRoots();
   drawOverlay();
 }
@@ -895,6 +924,14 @@ $("#panel").addEventListener("click", ev => {
   }
 });
 
+function focusSection(m){
+  if(!S.focus) return "";
+  const fe = EV.filter(inFocus);
+  const prev = fe.filter(e=>e.m<=m).slice(-4).reverse(), next = fe.filter(e=>e.m>m).slice(0,3);
+  return `<div class="sec focus-sec"><h3>${esc(focusName())}의 사건 · ${fe.length}</h3>
+    ${next.length?`<div class="muted">다가오는 사건</div><ul class="evlist">${next.map(e=>evItem(e)).join("")}</ul>`:""}
+    ${prev.length?`<div class="muted" style="margin-top:8px">지나간 사건</div><ul class="evlist">${prev.map(e=>evItem(e, e.m===m)).join("")}</ul>`:""}</div>`;
+}
 function panelOverview(){
   const m = S.m;
   const recent = EV.filter(e => e.m <= m && e.m >= m-2).reverse();
@@ -929,6 +966,7 @@ function panelOverview(){
   return `<div class="kicker">${fmtM(m)}</div>
     <h2 class="ptitle">이 시점의 세계</h2>
     <p class="psub">${esc(eraAt(m).n)}. 지구본의 나라나 사건 점을 누르면 자세한 내용이 이곳에 나옵니다.</p>
+    ${focusSection(m)}
     <div class="sec"><h3>최근 사건</h3>${evHtml}</div>
     <div class="sec"><h3>진영 판도</h3>${blocs}</div>
     <div class="sec"><h3>주요국 지도자</h3><div class="leaders">${lead}</div></div>`;
