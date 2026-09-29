@@ -32,5 +32,8 @@
 - 문체: 사건 요약 2–3문장, 사실 위주, "~했다" 체. 해석이 갈리는 내용은 `q`(쟁점)에 분리
 - 국경은 근사치임을 페이지 하단에 명시해 둠. GPL 출처 문구 유지
 
+## 배포 시 주의
+- `css/style.css`나 `js/app.js`를 고치면 `index.html`의 `?v=숫자`를 하나 올린다. GitHub Pages가 10분간 캐시해서, 안 올리면 새 HTML + 예전 JS가 섞여 깨져 보인다
+
 ## 확인 방법
 VS Code Live Server로 index.html을 열어 콘솔 오류 확인. `window.__app` (S, setDate, select, setT, setPlaying)로 디버깅 가능.
