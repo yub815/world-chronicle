@@ -27,6 +27,20 @@ const EVI = Object.fromEntries(EV.map(e=>[e.id,e]));
 const PPL = {...PPL1, ...PPL2};
 EV.forEach((e,i)=>{ e.m = mi(e.d); e.fx=[]; e.mf = e.m + (+e.d.slice(8,10)-1)/31 + i*1e-6; });
 EV.forEach(e=>e.k.forEach(k=>EVI[k] && EVI[k].fx.push(e.id)));
+// 대륙: 사건 위치(경도·위도)로 대략 나눈다. [코드, 이름, 카메라 중심, 확대]
+const CONT = [["EU","유럽",[18,50],1.7],["ME","중동",[44,29],2],["AF","아프리카",[18,3],1.25],["AS","아시아·태평양",[118,22],1.15],["AM","아메리카",[-82,12],1.1]];
+function contOf(loc){
+  if(!loc) return null;
+  const [lo,la] = loc;
+  if(lo < -30 && lo > -130) return "AM";
+  if(lo <= -130 || lo >= 63) return "AS";
+  if(la >= 12 && la < 42 && lo >= (la >= 22 ? 29 : 35)) return "ME";
+  if(la >= 36 && la < 42 && lo > 26) return "ME";
+  if(la >= 36) return "EU";
+  if(lo >= -25) return "AF";
+  return la > 0 ? "EU" : "AF";
+}
+EV.forEach(e=>{ e.cont = contOf(e.loc); });
 
 const NATONLY = new Set(["KOR","VIE","PSE","GRL","HKG","TWN","PUR","ESP","ACC","WSA"]);
 for(const [id,e] of Object.entries(ENT)){
@@ -91,10 +105,31 @@ function readColors(){
   COL = {f:{}, i:{}};
   Object.keys(FACN).forEach(k=>COL.f[k]=g("--f-"+k));
   Object.keys(IDEN).forEach(k=>COL.i[k]=g("--i-"+k));
-  ["ocean-1","ocean-2","grat","rim","border","coast","halo","fg","fg-2","fg-3","bg","accent","accent-2","colony-mix","none","line"].forEach(k=>COL[k]=g("--"+k));
+  ["ocean-1","ocean-2","grat","rim","border","coast","halo","fg","fg-2","fg-3","bg","accent","accent-2","colony-mix","none","line","focus"].forEach(k=>COL[k]=g("--"+k));
   patCache.clear();
 }
 const patCache = new Map();
+// 국가 모드: HOI4 느낌의 나라별 고유색. 표에 없는 나라는 id 해시로 색을 정한다
+const NCOL = {
+  GER:"#5f6468", FRG:"#6b7076", GDR:"#8a5e5e", ENG:"#b8333d", FRA:"#3f63c6", VIC:"#7d8fb8", ITA:"#3c8c4c", RSI:"#5f9a5a",
+  JAP:"#d9c98a", USA:"#4f86b8", SOV:"#8e1f22", RUS:"#9a3030", CHI:"#3f8c96", PRC:"#c93a2e", TWN:"#3f8c96",
+  MAN:"#8a6aa8", MEN:"#b08a5a", WNG:"#7aa0a8", GXC:"#6f9a6a", YUN:"#a8a060", SHX:"#9a7a9a", XSM:"#7a8a5a", SIK:"#a88a6a", TIB:"#c9a87a",
+  MON:"#a86a4a", ROK:"#4a78b0", PRK:"#a33a3a", POL:"#c0567f", CZE:"#5fa0b8", SLO:"#7ab0a0", HUN:"#d08a4a", ROM:"#d4b848",
+  BUL:"#5f8a50", YUG:"#6f8fc4", CRO:"#8f6a9a", ALB:"#b8605a", GRE:"#6cb0d0", TUR:"#7fa892", FIN:"#d8d8d0", SWE:"#4a78c0",
+  NOR:"#b0705f", DEN:"#a64a50", ICE:"#8ab0c8", HOL:"#e08c3a", BEL:"#c9ae40", LUX:"#6aa0c0", SWI:"#c05050", POR:"#3a8a5a",
+  SPR:"#c89a3a", SPN:"#d2b24a", IRE:"#6ab86a", EST:"#5a8ac0", LAT:"#9a4a50", LIT:"#c0a040", AUS:"#b09a8a", CAN:"#9a3f4a",
+  AST:"#3f7a4a", NZL:"#5a6fa8", SAF:"#b8a070", IND:"#e0a060", PAK:"#3f8050", BAN:"#5aa070", BUR:"#a0a050", SIA:"#5a70b0",
+  AFG:"#8a9a6a", PER:"#6a9a8a", IRQ:"#9a8a5a", SAU:"#6a9a50", EGY:"#c8b070", ETH:"#8ab050", LBA:"#b09060", ISR:"#5a8ad0",
+  SYR:"#a07a8a", JOR:"#b0907a", LEB:"#a0b080", BRA:"#4f9a4f", ARG:"#8cb8e0", CHL:"#a85a6f", MEX:"#6a9a5a", CUB:"#4a6ab0",
+  PRU:"#c07070", COL:"#d0b050", VEN:"#b08a50", BOL:"#9a7050", PAR:"#6a8aa0", URU:"#9ab0d0", ECU:"#c0a870",
+  INS:"#b04a4a", PHI:"#5a7ac0", DRV:"#b84a3a", SVN:"#c8a050", CAM:"#6a8ab0", LAO:"#9a6a8a", MAL:"#c07a5a",
+  UKR:"#d0b848", BLR:"#7a9a60", KAZ:"#5ab0b0", MDA:"#b08a6a",
+};
+function nationColor(id){
+  if(NCOL[id]) return NCOL[id];
+  let h = 0; for(const ch of id) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  return d3.hsl(h % 360, .32 + (h>>9)%20/100, .5 + (h>>5)%10/100).formatHex();
+}
 
 /* ================= geo ================= */
 const SNAPS = [["s38",-99999],["s45",mi("1945-09")],["s60",mi("1960-01")],["s94",mi("1991-01")]];
@@ -119,10 +154,11 @@ function coastOf(s){ return coastCache[s] || (coastCache[s] = topojson.mesh(GEO,
 
 /* ================= state ================= */
 const S = {
-  m: 0, mode: "f", snap: "s38",
+  m: 0, mode: "n", snap: "s38", flat: false,
   st: {}, meshSig:"", ownerMesh:null, occMesh:null,
   rot: [-22,-40,0], k: 1, base: 300, w: 800, h: 600, dpr: 1,
   hover: null, hoverEv: null,
+  focus: null,         // 재생 범위: null = 전체, {kind:"c", id:국가} | {kind:"r", id:대륙}
   sel: null,           // {type, id, terr?}
   hist: [],
   playing: false, timer: null, t: 0,
@@ -168,12 +204,13 @@ function colorOf(id){
   const e = E(id);
   if(S.m >= e.endM && !NATONLY.has(id)) { /* defunct state still listed as owner: neutral */ }
   if(NATONLY.has(id)) return COL.none;
+  if(S.mode==="n") return nationColor(id);
   return S.mode==="f" ? (COL.f[facAt(id,S.m)]||COL.none) : (COL.i[ideAt(id,S.m)]||COL.none);
 }
 function fillOf(x){
   if(x.oc){ return colorOf(x.oc); }
   const c = colorOf(x.o);
-  return x.c ? d3.interpolateRgb(c, COL["colony-mix"])(0.48) : c;
+  return x.c ? d3.interpolateRgb(c, COL["colony-mix"])(S.mode==="n" ? 0.35 : 0.48) : c;
 }
 function stripeOf(x){ return x.oc ? colorOf(x.o) : null; }
 function patternFor(ctx, color){
@@ -189,7 +226,11 @@ function patternFor(ctx, color){
 /* ================= globe rendering ================= */
 const baseC = $("#base"), overC = $("#overlay"), wrap = $("#globeWrap");
 const bctx = baseC.getContext("2d"), octx = overC.getContext("2d");
-const proj = d3.geoOrthographic().clipAngle(90).precision(0.4);
+// 지구본(정사도법)과 평면(Natural Earth). 평면에서도 S.rot[0]은 가운데 경도, S.rot[1]은 가운데 위도로 쓴다
+const projG = d3.geoOrthographic().clipAngle(90).precision(0.4);
+const projF = d3.geoNaturalEarth1().precision(0.4);
+const NE_RAW = d3.geoNaturalEarth1Raw, NE_YMAX = NE_RAW(0, Math.PI/2)[1];
+let proj = projG;
 const pathB = d3.geoPath(proj, bctx), pathO = d3.geoPath(proj, octx);
 const grat = d3.geoGraticule10();
 let labelFont = "600 12px 'IBM Plex Sans KR', sans-serif";
@@ -200,13 +241,32 @@ function sizeGlobe(){
   for(const c of [baseC, overC]){ c.width = Math.round(S.w*S.dpr); c.height = Math.round(S.h*S.dpr); }
   const narrow = S.w < 620;
   S.base = Math.min(S.w, S.h) / 2 * (narrow ? 0.9 : 0.86);
+  S.baseF = Math.min(S.w / 5.6, S.h / (2*NE_YMAX + 0.25));
   S.cx = S.w/2 + (narrow ? 0 : S.w*0.04); S.cy = S.h/2 + (narrow ? S.h*0.06 : S.h*0.03);
   patCache.clear();
   drawAll();
 }
-function setProj(){ proj.scale(S.base*S.k).translate([S.cx, S.cy]).rotate(S.rot); }
+function setProj(){
+  if(!S.flat){ proj.scale(S.base*S.k).translate([S.cx, S.cy]).rotate(S.rot); return; }
+  const sc = S.baseF*S.k, half = sc*NE_YMAX;
+  let ty = S.h/2 + sc*NE_RAW(0, -S.rot[1]*Math.PI/180)[1];
+  if(2*half <= S.h) ty = S.h/2; else ty = Math.max(S.h - half, Math.min(half, ty));
+  // 위아래 끝에 닿으면 가운데 위도도 그만큼만 움직인 것으로 되돌린다
+  S.rot[1] = -NE_RAW.invert(0, Math.max(-NE_YMAX, Math.min(NE_YMAX, (ty - S.h/2)/sc)))[1]*180/Math.PI;
+  proj.scale(sc).translate([S.w/2, ty]).rotate([S.rot[0], 0, 0]);
+}
 const center = () => [-S.rot[0], -S.rot[1]];
-const visible = p => d3.geoDistance(p, center()) < Math.PI/2 - 0.05;
+const visible = p => {
+  if(!S.flat) return d3.geoDistance(p, center()) < Math.PI/2 - 0.05;
+  const xy = proj(p); return !!xy && xy[0] > -20 && xy[0] < S.w+20 && xy[1] > -20 && xy[1] < S.h+20;
+};
+function setFlat(on){
+  S.flat = on; proj = on ? projF : projG;
+  pathB.projection(proj); pathO.projection(proj);
+  $("#pGlobe").setAttribute("aria-pressed", !on); $("#pFlat").setAttribute("aria-pressed", on);
+  try { localStorage.setItem("wc-flat", on ? "1" : "0"); } catch(e){}
+  hideTip(); drawAll();
+}
 
 function drawBase(now){
   now = now || performance.now();
@@ -215,6 +275,12 @@ function drawBase(now){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,S.w,S.h);
   const R = proj.scale(), [cx,cy] = proj.translate();
+  if(S.flat){
+    const lg = ctx.createLinearGradient(0, 0, 0, S.h);
+    lg.addColorStop(0, COL["ocean-1"]); lg.addColorStop(1, COL["ocean-2"]);
+    ctx.beginPath(); pathB({type:"Sphere"}); ctx.fillStyle = lg; ctx.fill();
+    ctx.strokeStyle = COL.rim; ctx.lineWidth = 1.5; ctx.stroke();
+  } else {
   // atmosphere
   const glow = ctx.createRadialGradient(cx,cy,R*0.95,cx,cy,R*1.12);
   glow.addColorStop(0, COL.rim); glow.addColorStop(1, "rgba(0,0,0,0)");
@@ -223,6 +289,7 @@ function drawBase(now){
   const oc = ctx.createRadialGradient(cx-R*0.35, cy-R*0.4, R*0.1, cx, cy, R);
   oc.addColorStop(0, COL["ocean-1"]); oc.addColorStop(1, COL["ocean-2"]);
   ctx.beginPath(); pathB({type:"Sphere"}); ctx.fillStyle = oc; ctx.fill();
+  }
   ctx.beginPath(); pathB(grat); ctx.strokeStyle = COL.grat; ctx.lineWidth = 1; ctx.stroke();
   // land grouped by color
   const feats = FEAT[S.snap], groups = new Map(), stripes = [];
@@ -282,7 +349,7 @@ function drawLabels(ctx){
 }
 
 function markerEvents(){
-  return EV.filter(e => e.m <= S.m && e.m >= S.m - 12);
+  return EV.filter(e => e.m <= S.m && e.m >= S.m - 12 && inFocus(e));
 }
 let pulseT0 = performance.now();
 function drawOverlay(now){
@@ -304,6 +371,11 @@ function drawOverlay(now){
       ctx.globalAlpha = (1-p)*0.28; ctx.fillStyle = COL["accent-2"]; ctx.fill();
       ctx.globalAlpha = 1-p; ctx.strokeStyle = COL["accent-2"]; ctx.lineWidth = 2.5; ctx.stroke(); ctx.globalAlpha = 1;
     }
+  }
+  if(S.focus && S.focus.kind==="c"){
+    ctx.beginPath();
+    for(const f of FEAT[S.snap]){ const x=S.st[f.k]; if(x.o===S.focus.id || x.oc===S.focus.id) pathO(f); }
+    ctx.strokeStyle = COL.focus; ctx.lineWidth = 1.8; ctx.setLineDash([5,3]); ctx.stroke(); ctx.setLineDash([]);
   }
   if(S.hover){ ctx.beginPath(); pathO(S.hover); ctx.strokeStyle = COL.fg; ctx.lineWidth = 1.4; ctx.stroke(); }
   // event markers
@@ -353,7 +425,7 @@ const zoom = d3.zoom().scaleExtent([0.8, 9]).clickDistance(5)
     if(se && !isWheel && !multi && lastT){
       const dx = t.x - lastT.x, dy = t.y - lastT.y;
       if(Math.abs(dx)+Math.abs(dy) > 0.5) dragMoved = true;
-      const sens = 75 / (S.base*S.k);
+      const sens = S.flat ? 180/Math.PI / (0.87*S.baseF*S.k) : 75 / (S.base*S.k);   // 평면: 화면 1px = 적도 기준 경도
       S.rot[0] += dx * sens; S.rot[1] = Math.max(-88, Math.min(88, S.rot[1] - dy * sens));
     }
     lastT = t; hideTip(); requestDraw();
@@ -372,7 +444,9 @@ function pick(px, py){
     if((xy[0]-px)**2 + (xy[1]-py)**2 < 100) return {ev:e};
   }
   const p = proj.invert([px,py]);
-  if(!p || d3.geoDistance(p, center()) > Math.PI/2) return null;
+  if(!p || !isFinite(p[0]) || !isFinite(p[1])) return null;
+  if(S.flat){ const b = proj(p); if(!b || Math.hypot(b[0]-px, b[1]-py) > 1) return null; }   // 지도 테두리 밖
+  else if(d3.geoDistance(p, center()) > Math.PI/2) return null;
   for(const f of FEAT[S.snap]){
     const b = f.b; const [lo,la] = p;
     if(la < b[0][1]-0.5 || la > b[1][1]+0.5) continue;
@@ -455,24 +529,36 @@ function renderLegend(){
   for(const f of FEAT[S.snap]){
     const x = S.st[f.k];
     const id = x.oc || x.o; if(NATONLY.has(id)) continue;
-    const key = S.mode==="f" ? facAt(id,S.m) : ideAt(id,S.m);
+    const key = S.mode==="n" ? id : S.mode==="f" ? facAt(id,S.m) : ideAt(id,S.m);
     cnt[key] = (cnt[key]||0) + f.area;
   }
-  const names = S.mode==="f" ? FACN : IDEN, cols = S.mode==="f" ? COL.f : COL.i;
-  const order = S.mode==="f" ? ["AX","AA","AL","CO","WP","EB","CN","NA","WE","NM","NE"] : ["D","F","C","N"];
-  const rows = order.filter(k=>cnt[k]).map(k=>`<div class="row"><span class="sw" style="background:${cols[k]}"></span><b>${names[k]}</b></div>`).join("");
-  const cmix = d3.interpolateRgb(COL.f.AL, COL["colony-mix"])(.48);
+  let rows, cA, cB;
+  if(S.mode==="n"){
+    // 국가 모드: 지금 가장 넓은 나라 10개만 (식민지·점령지 포함 면적)
+    rows = Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,10)
+      .map(id=>`<div class="row"><span class="sw" style="background:${nationColor(id)}"></span><b>${esc(shortAt(id,S.m))}</b></div>`).join("");
+    cA = nationColor("ENG"); cB = nationColor("GER");
+  } else {
+    const names = S.mode==="f" ? FACN : IDEN, cols = S.mode==="f" ? COL.f : COL.i;
+    const order = S.mode==="f" ? ["AX","AA","AL","CO","WP","EB","CN","NA","WE","NM","NE"] : ["D","F","C","N"];
+    rows = order.filter(k=>cnt[k]).map(k=>`<div class="row"><span class="sw" style="background:${cols[k]}"></span><b>${names[k]}</b></div>`).join("");
+    cA = COL.f.AL; cB = COL.f.CO;
+  }
+  const cmix = d3.interpolateRgb(cA, COL["colony-mix"])(S.mode==="n" ? .35 : .48);
   $("#legend").innerHTML = rows + `<div class="sep"></div>
     <div class="row"><span class="sw" style="background:${cmix}"></span>식민지·보호령</div>
-    <div class="row"><span class="sw" style="background:repeating-linear-gradient(135deg,${COL.f.CO} 0 3px,${COL.f.AL} 3px 6px)"></span>점령지 (빗금 = 원래 주인)</div>
+    <div class="row"><span class="sw" style="background:repeating-linear-gradient(135deg,${cB} 0 3px,${cA} 3px 6px)"></span>점령지 (빗금 = 원래 주인)</div>
     <div class="row"><span class="sw" style="background:${COL.accent};border-radius:50%;width:10px;height:10px"></span>최근 사건</div>`;
 }
+$("#pGlobe").onclick = () => setFlat(false);
+$("#pFlat").onclick = () => setFlat(true);
+$("#mNat").onclick = () => setMode("n");
 $("#mFac").onclick = () => setMode("f");
 $("#mIde").onclick = () => setMode("i");
 $("#mLeg").onclick = () => { const l=$("#legend"); const on=!l.classList.contains("show"); l.classList.toggle("show",on); $("#mLeg").setAttribute("aria-pressed", on); };
 function setMode(m){
   S.mode = m;
-  $("#mFac").setAttribute("aria-pressed", m==="f"); $("#mIde").setAttribute("aria-pressed", m==="i");
+  $("#mNat").setAttribute("aria-pressed", m==="n"); $("#mFac").setAttribute("aria-pressed", m==="f"); $("#mIde").setAttribute("aria-pressed", m==="i");
   refreshFills(true); renderLegend(); drawAll();
 }
 
@@ -494,9 +580,77 @@ function renderTrack(){
     if(big && (W>560 || (y%10===0 && y!==1940) || y===1936)) g.append("text").attr("class","yr").attr("x",x(m)).attr("y",46).attr("text-anchor", y===1936?"start":"middle").text(y);
   }
   const ev = EV.filter(e=>e.m>=0);
-  g.selectAll(".tick-ev").data(ev).join("rect").attr("class","tick-ev").attr("x",d=>x(d.m)-1).attr("y",4).attr("width",2).attr("height",9).attr("rx",1)
-    .on("click",(e,d)=>select({type:"event",id:d.id})).append("title").text(d=>`${fmtDshort(d.d)} ${d.t}`);
+  if(S.focus) ev.sort((a,b)=> inFocus(a) - inFocus(b));   // 강조된 사건을 위에 그린다
+  TRK.x = x; TRK.ev = ev; TRK.W = W;
+  TRK.lens = g.append("g").attr("class","lens").style("display","none");
+  TRK.lens.append("rect").attr("class","lens-bg").attr("y",-9).attr("height",24).attr("rx",5);
+  TRK.lensYears = TRK.lens.append("g");
+  TRK.ticks = g.selectAll(".tick-ev").data(ev).join("rect").attr("class", d=> "tick-ev" + (S.focus ? (inFocus(d) ? " on" : " off") : ""))
+    .attr("x",d=>x(d.mf)-1).attr("y",4).attr("width",2).attr("height",9).attr("rx",1);
+  // 마우스를 올리면 가장 가까운 사건에 점을 찍고 이름을 띄운다 (2px 막대를 직접 맞추지 않아도 된다)
+  TRK.hl = g.append("circle").attr("class","tick-hl").attr("cy",8.5).attr("r",5).style("display","none");
+  g.append("rect").attr("class","tick-hit").attr("x",0).attr("y",-10).attr("width",W).attr("height",22)
+    .on("pointermove", ev => trackHover(d3.pointer(ev)[0]))
+    .on("pointerleave", () => trackHover(null))
+    .on("click", ev => { const d = nearestTick(d3.pointer(ev)[0]); if(d) select({type:"event", id:d.id}); });
   Object.keys(HOI).forEach(m=>{ g.append("path").attr("class","hoi-mark").attr("d",`M${x(+m)-4},0 L${x(+m)+4},0 L${x(+m)},6 Z`).append("title").text(HOI[m]); });
+}
+// 돋보기: 마우스 주변 ±LENS_R px 구간을 어안(fisheye)처럼 펼쳐서 촘촘한 사건을 떼어 놓는다
+const TRK = {x:null, ev:[], hl:null, mx:null};
+const LENS_R = 80, LENS_K = 6;
+function fish(x){
+  const mx = TRK.mx; if(mx === null) return x;
+  const d = x - mx, a = Math.abs(d); if(a >= LENS_R) return x;
+  const t = a / LENS_R; return mx + Math.sign(d) * LENS_R * ((LENS_K+1)*t / (LENS_K*t + 1));
+}
+const tickX = d => fish(TRK.x(d.mf));
+function nearestTick(px){
+  let best = null, bd = 10;
+  const pool = S.focus ? TRK.ev.filter(inFocus) : TRK.ev;
+  for(const pass of [pool, TRK.ev]){
+    for(const d of pass){ const dd = Math.abs(tickX(d) - px); if(dd < bd){ bd = dd; best = d; } }
+    if(best) return best;
+  }
+  return null;
+}
+function applyLens(px){
+  TRK.mx = px;
+  if(px === null){
+    TRK.lens.style("display","none");
+    TRK.ticks.attr("x", d=>TRK.x(d.mf)-1).attr("y",4).attr("height",9);
+    return;
+  }
+  const a = Math.max(0, px-LENS_R), b = Math.min(TRK.W, px+LENS_R);
+  TRK.lens.style("display",null).select(".lens-bg").attr("x",a).attr("width",b-a);
+  TRK.ticks.each(function(d){
+    const x0 = TRK.x(d.mf), near = Math.max(0, 1 - Math.abs(x0-px)/LENS_R);
+    this.setAttribute("x", fish(x0)-1); this.setAttribute("y", 4 - near*6); this.setAttribute("height", 9 + near*6);
+  });
+  // 렌즈 안의 연도 눈금 (펼쳐진 축척을 알 수 있게)
+  const yrs = [];
+  for(let y=1936;y<=1992;y++){ const x0 = TRK.x((y-1936)*12); if(Math.abs(x0-px) < LENS_R) yrs.push([y, fish(x0)]); }
+  let lastX = -1e9; for(const d of yrs){ d[2] = d[1] - lastX > 30; if(d[2]) lastX = d[1]; }   // 글자가 겹치면 선만
+  TRK.lensYears.selectAll("g").data(yrs, d=>d[0]).join(en=>{ const gg = en.append("g"); gg.append("line").attr("y1",-8).attr("y2",14); gg.append("text").attr("y",-1).attr("x",3); return gg; })
+    .attr("transform", d=>`translate(${d[1]},0)`).attr("class","lens-yr").select("text").text(d=>d[2] ? d[0] : "");
+}
+const ttip = $("#ttip");
+function trackHover(px){
+  applyLens(px);
+  const d = px === null ? null : nearestTick(px);
+  if(!d){ TRK.hl.style("display","none"); ttip.hidden = true; TRK.tipId = null; return; }
+  const cx = tickX(d);
+  TRK.hl.style("display",null).attr("cx", cx).attr("cy", 2).raise().classed("on", !!S.focus && inFocus(d));
+  if(TRK.tipId !== d.id){
+    TRK.tipId = d.id;
+    const ph = PHOTO[d.id];
+    ttip.innerHTML = `${ph ? `<img src="${esc(ph.src)}" alt="" referrerpolicy="no-referrer">` : ""}<div class="tt-b">
+      <div class="tt-d mono">${fmtD(d.d)}</div><div class="tt-t">${esc(d.t)}</div><p>${esc(firstSentence(d.s))}</p></div>`;
+    // 사진 목록을 아직 안 받았으면 받은 뒤에 같은 사건 위라면 다시 그린다
+    if(!(d.id in PHOTO)) loadPhotos().then(()=>{ if(TRK.tipId === d.id && PHOTO[d.id]){ TRK.tipId = null; trackHover(TRK.mx); } });
+  }
+  ttip.hidden = false;
+  const W = $("#track").clientWidth, w = ttip.offsetWidth;
+  ttip.style.left = Math.max(0, Math.min(W - w, cx - w/2)) + "px";
 }
 range.addEventListener("input", ()=> setT(+range.value, {fromRange:true}));
 $("#prev").onclick = () => { setPlaying(false); setDate(Math.max(0, Math.ceil(S.t)-1)); };
@@ -504,6 +658,39 @@ $("#next").onclick = () => { setPlaying(false); setDate(Math.min(MMAX, Math.floo
 const OPT = {pause: true, follow: true};
 function bindToggle(id, key){ const b=$(id); b.onclick=()=>{ OPT[key]=!OPT[key]; b.setAttribute("aria-pressed", OPT[key]); }; }
 bindToggle("#optPause","pause"); bindToggle("#optFollow","follow");
+
+/* ================= focus: 한 국가·대륙의 사건만 재생 ================= */
+function inFocus(e){
+  const f = S.focus; if(!f) return true;
+  return f.kind==="c" ? e.c.includes(f.id) : e.cont===f.id;
+}
+const focusSel = $("#focus");
+function buildFocusOptions(){
+  const cnt = {};
+  for(const e of EV) for(const c of e.c) cnt[c] = (cnt[c]||0) + 1;
+  const ents = Object.keys(cnt).filter(id=>cnt[id]>=4 && !NATONLY.has(id)).sort((a,b)=>cnt[b]-cnt[a]);
+  focusSel.innerHTML = `<option value="">전체 사건</option>
+    <optgroup label="대륙">${CONT.map(([k,n])=>`<option value="r:${k}">${n} (${EV.filter(e=>e.cont===k).length})</option>`).join("")}</optgroup>
+    <optgroup label="국가">${ents.map(id=>`<option value="c:${id}">${esc(E(id).n)} (${cnt[id]})</option>`).join("")}</optgroup>`;
+}
+function setFocus(v, opt={}){
+  if(v && !focusSel.querySelector(`option[value="${v}"]`)){
+    const id = v.slice(2), o = document.createElement("option");
+    o.value = v; o.textContent = `${E(id).n} (${EV.filter(e=>e.c.includes(id)).length})`;
+    focusSel.querySelector('optgroup[label="국가"]').append(o);
+  }
+  focusSel.value = v;
+  S.focus = v ? {kind: v[0], id: v.slice(2)} : null;
+  focusSel.classList.toggle("active", !!v);
+  renderTrack(); renderRoots(); drawOverlay(); kickOverlay();
+  if(opt.fly === false || !S.focus) return;
+  if(S.focus.kind==="r"){ const c = CONT.find(x=>x[0]===S.focus.id); flyTo(c[2], c[3]); }
+  else { const f = largestFeatureOf(S.focus.id); if(f) flyTo(f.lp); }
+}
+focusSel.addEventListener("change", ()=> setFocus(focusSel.value));
+const focusName = () => !S.focus ? "" : S.focus.kind==="r" ? CONT.find(c=>c[0]===S.focus.id)[1] : E(S.focus.id).n;
+document.addEventListener("click", ev => { if(ev.target.closest("[data-unfocus]")) setFocus(""); });
+buildFocusOptions();
 function setT(t, opt={}){
   t = Math.max(0, Math.min(MMAX + 0.999, t));
   S.t = t;
@@ -534,7 +721,7 @@ function playFrame(ts){
   else {
     const sp = +$("#speed").value;
     let nt = S.t + dt*sp;
-    const ev = EV.find(e => e.mf > S.t && e.mf <= nt);
+    const ev = EV.find(e => e.mf > S.t && e.mf <= nt && inFocus(e));
     if(ev){ nt = ev.mf; announce(ev); if(OPT.pause) hold = holdFor(sp); }
     setT(nt);
     if(S.t >= MMAX + 0.999){ setPlaying(false); return; }
@@ -607,6 +794,28 @@ function hydratePhotos(root, compact){
   });
 }
 
+/* ================= Wikipedia links ================= */
+// 사건: WIKI의 영어 문서 + (있으면) 한국어판 문서. 인물·정당: 한국어 위키백과 검색(제목이 맞으면 바로 문서로 간다)
+const WKKO = {};
+function koTitleOf(en){
+  return WKKO[en] || (WKKO[en] = fetch("https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=langlinks&lllang=ko&titles=" + encodeURIComponent(en))
+    .then(r=>r.json()).then(j=>{ const p = Object.values((j.query||{}).pages||{})[0]; return p && p.langlinks && p.langlinks[0] ? p.langlinks[0]["*"] : null; })
+    .catch(()=>null));
+}
+const wikiUrl = (lang, t) => `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(t.replace(/ /g,"_"))}`;
+const wikiSearch = q => `https://ko.wikipedia.org/w/index.php?search=${encodeURIComponent(q)}`;
+const WK_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2H2v8h8V7.5M7 1.5h3.5V5M10.5 1.5 5.5 6.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+function wikiBlock(links, evId){
+  return `<div class="wiki"${evId?` data-wk="${evId}"`:""}><span class="lbl">위키백과</span>${links.map(([u,t])=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ${WK_ICON}</a>`).join("")}</div>`;
+}
+function eventWiki(e){ const en = WIKI[e.id]; return en ? wikiBlock([[wikiUrl("en", en), "English"]], e.id) : wikiBlock([[wikiSearch(e.t), "한국어 검색"]]); }
+function hydrateWiki(root){
+  root.querySelectorAll("[data-wk]").forEach(el=>{
+    const en = WIKI[el.dataset.wk];
+    koTitleOf(en).then(ko=>{ if(ko && el.isConnected) el.innerHTML = el.innerHTML.replace('<span class="lbl">위키백과</span>', `<span class="lbl">위키백과</span><a href="${esc(wikiUrl("ko", ko))}" target="_blank" rel="noopener">한국어 ${WK_ICON}</a>`); });
+  });
+}
+
 /* ================= selection & panel ================= */
 function selectedEntities(){
   const s = S.sel; const out = new Set();
@@ -665,7 +874,7 @@ function renderPanel(){
   else if(s.type==="grp"){ crumb = "정당 · 조직"; html = panelGrp(s.id); }
   $("#crumb").textContent = crumb;
   P.innerHTML = html;
-  hydratePhotos(P);
+  hydratePhotos(P); hydrateWiki(P);
   if(!(S.playing && !s)) P.scrollTop = 0;
 }
 $("#panel").addEventListener("click", ev => {
@@ -678,6 +887,12 @@ $("#panel").addEventListener("click", ev => {
   else if(b.dataset.date){ setPlaying(false); setDate(+b.dataset.date); if(S.sel && S.sel.type==="ent"){ const f=largestFeatureOf(S.sel.id); if(f) flyTo(f.lp);} }
   else if(b.dataset.act==="globe"){ const e=EVI[S.sel.id]; setDate(Math.max(0,e.m)); flyTo(e.loc, Math.max(S.k,1.6)); document.querySelector(".stage").scrollIntoView({behavior: reduceMotion?"auto":"smooth"}); }
   else if(b.dataset.act==="roots"){ scrollToRoots(); }
+  else if(b.dataset.act==="focus"){
+    setFocus("c:"+S.sel.id);
+    // 지금 시점 이후에 이 나라 사건이 없으면 첫 사건부터 다시 재생
+    if(!EV.some(e=>e.mf > S.t && inFocus(e))){ const f = EV.find(e=>e.m>=0 && inFocus(e)); if(f) setDate(Math.max(0, f.m-1)); }
+    setPlaying(true);
+  }
 });
 
 function panelOverview(){
@@ -727,6 +942,7 @@ function panelEvent(e){
     <div class="chips" style="margin-bottom:14px"><span class="chip tag">${LANEN[e.r]}</span>${e.m<0?'<span class="chip tag">1936년 이전 배경</span>':""}</div>
     <p class="body-text">${esc(e.s)}</p>
     ${e.q ? `<div class="issue"><div class="lbl">쟁점</div><p>${esc(e.q)}</p></div>` : ""}
+    ${eventWiki(e)}
     <div class="actions"><button class="abtn primary" data-act="globe">지구본에서 보기</button><button class="abtn" data-act="roots">뿌리에서 보기</button></div>
     ${causes.length?`<div class="sec"><h3>원인 · 배경</h3><ul class="evlist">${causes.map(x=>evItem(x)).join("")}</ul></div>`:""}
     ${effects.length?`<div class="sec"><h3>이어진 사건</h3><ul class="evlist">${effects.map(x=>evItem(x)).join("")}</ul></div>`:""}
@@ -780,7 +996,7 @@ function panelEnt(id, terr){
       ${pt?`<dt>집권 세력</dt><dd>${chipGrp(pt)}</dd>`:""}
     </dl>
     ${!govId && (x) ? `<div class="sec"><h3>${esc(E(x.oc||x.o).n)} 현황</h3><dl class="kv"><dt>진영</dt><dd>${FACN[facAt(x.oc||x.o,m)]}</dd><dt>이념</dt><dd>${IDEN[ideAt(x.oc||x.o,m)]}</dd>${leadersAt(x.oc||x.o,m).slice(0,1).map(l=>`<dt>지도자</dt><dd>${esc(l.name)}</dd>`).join("")}</dl></div>`:""}
-    <div class="actions"><button class="abtn" data-act="roots">이 나라의 뿌리 보기</button></div>
+    <div class="actions">${EV.some(e=>e.c.includes(id))?'<button class="abtn primary" data-act="focus">이 나라 사건만 재생</button>':""}<button class="abtn" data-act="roots">이 나라의 뿌리 보기</button></div>
     <div class="sec"><h3>지금까지의 사건</h3>${before.length?`<ul class="evlist">${before.map(v=>evItem(v, v.m===m)).join("")}</ul>`:'<p class="muted">이 시점 이전에 기록된 사건이 없습니다.</p>'}</div>
     ${after.length?`<div class="sec"><h3>다가올 사건</h3><ul class="evlist">${after.map(v=>evItem(v)).join("")}</ul></div>`:""}
     ${hist}`;
@@ -792,6 +1008,7 @@ function panelPerson(id){
     <p class="psub">${esc(p[1])} · ${esc(p[4])}</p>
     <div class="chips" style="margin-bottom:14px">${p[3]?chipEnt(p[3]):""}${p[6]?chipGrp(p[6]):""}</div>
     <p class="body-text">${esc(p[5])}</p>
+    ${wikiBlock([[wikiSearch(p[0]), "한국어"], [`https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(p[1])}`, "English"]])}
     <div class="actions"><button class="abtn" data-act="roots">인물의 뿌리 보기</button></div>
     <div class="sec"><h3>관련 사건 ${evs.length}</h3><ul class="evlist">${evs.map(e=>evItem(e, e.m===S.m)).join("")}</ul></div>`;
 }
@@ -803,6 +1020,7 @@ function panelGrp(id){
     <h2 class="ptitle">${esc(g[0])}</h2>
     <div class="chips" style="margin-bottom:14px">${g[2]?chipEnt(g[2]):""}${g[3]&&g[3]!=="-"?`<span class="chip tag">${IDEN[g[3]]}</span>`:""}</div>
     <p class="body-text">${esc(g[5])}</p>
+    ${wikiBlock([[wikiSearch(g[0]), "한국어 검색"]])}
     <div class="actions"><button class="abtn" data-act="roots">관련 사건 뿌리 보기</button></div>
     ${mem.length?`<div class="sec"><h3>주요 인물</h3><div class="chips">${mem.map(chipPerson).join("")}</div></div>`:""}
     ${ents.length&&!g[2]?`<div class="sec"><h3>집권 국가</h3><div class="chips">${ents.map(x=>chipEnt(x)).join("")}</div></div>`:""}
@@ -824,12 +1042,17 @@ function layoutRoots(){
   const narrow = window.innerWidth <= 720;
   const W = Math.max(narrow ? 900 : 0, holder.clientWidth);
   RT.W = W;
-  const axisW = 58, laneW = (W - axisW - 6) / LANES.length;
+  // 재생 범위(국가·대륙)를 고르면 그 사건만, 쓰이는 레인만 남긴다
+  const evs = EV.filter(inFocus);
+  const used = new Set(evs.map(e=>e.r));
+  const lanes = S.focus ? LANES.filter(([k])=>used.has(k)) : LANES;
+  RT.lanes = lanes;
+  const axisW = 58, laneW = (W - axisW - 6) / Math.max(1, lanes.length);
   RT.axisW = axisW; RT.laneW = laneW;
-  const laneIx = Object.fromEntries(LANES.map(([k],i)=>[k,i]));
+  const laneIx = Object.fromEntries(lanes.map(([k],i)=>[k,i]));
   const px = 4.2, gap = 28, top = RT.top;
   const last = {}; let off = 0; RT.breaks = [];
-  RT.nodes = EV.map(e=>{
+  RT.nodes = evs.map(e=>{
     const mf = monthF(e.d);
     let y = top + mf*px + off;
     const L = laneIx[e.r];
@@ -839,9 +1062,12 @@ function layoutRoots(){
   });
   RT.px = px;
   RT.yAt = mf => { let o=0; for(const [b,v] of RT.breaks){ if(b<=mf) o=v; else break; } return top + mf*px + o; };
-  RT.H = RT.nodes[RT.nodes.length-1].y + 90;
-  $("#lanes").style.gridTemplateColumns = `${axisW}px repeat(${LANES.length}, 1fr)`;
-  $("#lanes").innerHTML = `<span></span>` + LANES.map(([k,n])=>`<span>${n}</span>`).join("");
+  RT.H = (RT.nodes.length ? RT.nodes[RT.nodes.length-1].y : RT.yAt((1992-1929)*12)) + 90;
+  $("#lanes").style.gridTemplateColumns = `${axisW}px repeat(${lanes.length}, 1fr)`;
+  $("#lanes").innerHTML = `<span></span>` + lanes.map(([k,n])=>`<span>${n}</span>`).join("");
+  const fl = $("#rootsFocus");
+  if(S.focus){ fl.hidden = false; fl.innerHTML = `<b>${esc(focusName())}</b> 사건 ${evs.length}개만 보는 중 <button class="abtn" data-unfocus>전체 보기</button>`; }
+  else fl.hidden = true;
 }
 function renderRoots(){
   layoutRoots();
@@ -861,9 +1087,9 @@ function renderRoots(){
     const yy = RT.yAt((y-1929)*12), dec = y%10===0;
     gGrid.append("line").attr("class","r-grid"+(dec?" dec":"")).attr("x1",axisW-6).attr("x2",W).attr("y1",yy).attr("y2",yy).attr("stroke-opacity", dec?.9:.45);
     if(yy - lastLbl > 16){ gGrid.append("text").attr("class","r-year"+(dec?" dec":"")).attr("x",axisW-10).attr("y",yy+4).attr("text-anchor","end").text(y); lastLbl=yy; }
-    if(dec && window.innerWidth<=720) LANES.forEach(([k,n],i)=> gGrid.append("text").attr("class","r-lanelbl").attr("x",axisW+i*laneW+10).attr("y",yy-6).text(n));
+    if(dec && window.innerWidth<=720) RT.lanes.forEach(([k,n],i)=> gGrid.append("text").attr("class","r-lanelbl").attr("x",axisW+i*laneW+10).attr("y",yy-6).text(n));
   }
-  for(let i=1;i<LANES.length;i++) gGrid.append("line").attr("x1",axisW+i*laneW).attr("x2",axisW+i*laneW).attr("y1",RT.top-20).attr("y2",H).attr("stroke","var(--line)").attr("stroke-dasharray","1 5");
+  for(let i=1;i<RT.lanes.length;i++) gGrid.append("line").attr("x1",axisW+i*laneW).attr("x2",axisW+i*laneW).attr("y1",RT.top-20).attr("y2",H).attr("stroke","var(--line)").attr("stroke-dasharray","1 5");
   // edges
   const NI = Object.fromEntries(RT.nodes.map(n=>[n.e.id,n]));
   RT.NI = NI;
@@ -941,7 +1167,7 @@ function highlightRoots(){
 }
 function scrollToRoots(){
   const s = S.sel; let target = null;
-  if(s && s.type==="event") target = RT.NI[s.id];
+  if(s && s.type==="event") target = RT.NI[s.id] || null;
   else if(s){ const n = RT.nodes.find(n=>rsvg.selectAll(".r-node").filter(d=>d===n).classed("hl")); target = n; }
   const svgTop = $("#rootsvg").getBoundingClientRect().top + window.scrollY;
   const y = target ? target.y : RT.yAt(S.m + M0 - 1929*12);
@@ -991,6 +1217,7 @@ new ResizeObserver(()=>{ const w=$("#track").clientWidth; if(w!==rw){ rw=w; rend
 let lastRootsW = 0;
 new ResizeObserver(()=>{ const w=$(".roots-scroll").clientWidth; if(Math.abs(w-lastRootsW)>2){ lastRootsW=w; renderRoots(); } }).observe($(".roots-scroll"));
 sizeGlobe();
+try { if(localStorage.getItem("wc-flat")==="1") setFlat(true); } catch(e){}
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ renderRoots(); drawAll(); });
 window.__app = {S, setDate, select, setT, setPlaying};
 (window.requestIdleCallback||setTimeout)(()=>loadPhotos());

@@ -2,7 +2,7 @@
 :root{
   --bg:#0e1315; --bg-2:#141b1e; --bg-3:#1b2428; --line:#28343a; --line-2:#344248;
   --fg:#e7e2d4; --fg-2:#a9b1ac; --fg-3:#737e7b;
-  --accent:#d6ab52; --accent-2:#f0cd83; --accent-ink:#1a1408;
+  --accent:#d6ab52; --accent-2:#f0cd83; --accent-ink:#1a1408; --focus:#5cc8dc;
   --ocean-1:#1c3038; --ocean-2:#0f1b20; --grat:rgba(231,226,212,.055); --rim:rgba(214,171,82,.18);
   --border:rgba(8,11,12,.85); --coast:rgba(8,11,12,.95); --halo:rgba(14,19,21,.88);
   --f-AX:#a3603d; --f-AA:#bf9563; --f-AL:#4f80c2; --f-CO:#bd443b; --f-NE:#8d897d;
@@ -18,7 +18,7 @@
 @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
   --bg:#eceee9; --bg-2:#f7f7f3; --bg-3:#ffffff; --line:#d3d7d1; --line-2:#c2c8c1;
   --fg:#1b2225; --fg-2:#4d585a; --fg-3:#7b8586;
-  --accent:#9a6512; --accent-2:#b57b1d; --accent-ink:#fff8ea;
+  --accent:#9a6512; --accent-2:#b57b1d; --accent-ink:#fff8ea; --focus:#0f7c8f;
   --ocean-1:#cddcdf; --ocean-2:#b5c9ce; --grat:rgba(27,34,37,.07); --rim:rgba(154,101,18,.22);
   --border:rgba(20,26,28,.62); --coast:rgba(20,26,28,.7); --halo:rgba(247,247,243,.9);
   --f-AX:#a65e38; --f-AA:#c49a66; --f-AL:#5584c4; --f-CO:#c24a40; --f-NE:#a5a193;
@@ -30,7 +30,7 @@
 :root[data-theme="light"]{
   --bg:#eceee9; --bg-2:#f7f7f3; --bg-3:#ffffff; --line:#d3d7d1; --line-2:#c2c8c1;
   --fg:#1b2225; --fg-2:#4d585a; --fg-3:#7b8586;
-  --accent:#9a6512; --accent-2:#b57b1d; --accent-ink:#fff8ea;
+  --accent:#9a6512; --accent-2:#b57b1d; --accent-ink:#fff8ea; --focus:#0f7c8f;
   --ocean-1:#cddcdf; --ocean-2:#b5c9ce; --grat:rgba(27,34,37,.07); --rim:rgba(154,101,18,.22);
   --border:rgba(20,26,28,.62); --coast:rgba(20,26,28,.7); --halo:rgba(247,247,243,.9);
   --f-AX:#a65e38; --f-AA:#c49a66; --f-AL:#5584c4; --f-CO:#c24a40; --f-NE:#a5a193;
@@ -103,12 +103,12 @@ a{color:var(--accent-2)}
 .tip .t2{color:var(--fg-2);font-size:12px}
 
 /* ---------- timeline bar ---------- */
-.timebar{display:flex;align-items:center;gap:12px;padding:10px 20px 16px;border-bottom:1px solid var(--line)}
+.timebar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;row-gap:14px;padding:10px 20px 12px;border-bottom:1px solid var(--line)}
 .tbtn{height:36px;min-width:36px;border-radius:7px;background:var(--bg-2);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;padding:0 10px;color:var(--fg)}
 .tbtn.play{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);min-width:44px}
 .tbtn svg{width:14px;height:14px;fill:currentColor}
 .speed{height:36px;border-radius:7px;background:var(--bg-2);border:1px solid var(--line);padding:0 8px;font-size:12.5px}
-.track{position:relative;flex:1;min-width:0;height:54px}
+.track{position:relative;flex:1 1 100%;order:5;min-width:0;height:54px}
 .track svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .track input[type=range]{position:absolute;left:0;right:0;top:12px;width:100%;margin:0;height:22px;background:transparent;-webkit-appearance:none;appearance:none}
 .track input[type=range]::-webkit-slider-runnable-track{height:22px;background:transparent}
@@ -117,6 +117,26 @@ a{color:var(--accent-2)}
 .track input[type=range]::-moz-range-thumb{width:4px;height:30px;background:var(--accent);border:0;border-radius:2px}
 .tick-ev{fill:var(--fg-3);opacity:.7}
 .tick-ev:hover{fill:var(--accent);opacity:1}
+.tick-ev.off{opacity:.18}
+.tick-ev.on{fill:var(--focus);opacity:1}
+.tick-hit{fill:transparent;cursor:pointer}
+.tick-hl{fill:var(--accent);stroke:var(--bg);stroke-width:2;pointer-events:none}
+.tick-hl.on{fill:var(--focus)}
+.lens-bg{fill:var(--bg-3);stroke:var(--line-2);pointer-events:none}
+.lens-yr line{stroke:var(--fg-3);stroke-opacity:.35}
+.lens-yr text{font-family:var(--mono);font-size:8.5px;fill:var(--fg-3)}
+.lens,.lens-yr{pointer-events:none}
+.roots-focus{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 20px 10px;padding:8px 12px;border:1px solid var(--focus);border-radius:8px;font-size:13px;color:var(--fg-2)}
+.roots-focus b{color:var(--focus);font-weight:600}
+.roots-focus .abtn{margin-left:auto}
+.ttip{position:absolute;bottom:calc(100% + 2px);left:0;z-index:6;pointer-events:none;display:flex;gap:10px;align-items:flex-start;width:320px;background:var(--bg-3);border:1px solid var(--line-2);border-radius:8px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.ttip img{width:76px;height:76px;object-fit:cover;border-radius:5px;flex:none;background:var(--bg-2)}
+.ttip .tt-b{min-width:0;padding:1px 2px}
+.ttip .tt-d{font-family:var(--mono);font-size:10.5px;color:var(--fg-3)}
+.ttip .tt-t{font-weight:600;font-size:13.5px;line-height:1.35;margin:1px 0 3px}
+.ttip p{margin:0;font-size:12px;line-height:1.5;color:var(--fg-2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.focus{height:36px;border-radius:7px;background:var(--bg-2);border:1px solid var(--line);padding:0 8px;font-size:12.5px;max-width:170px}
+.focus.active{border-color:var(--focus);color:var(--focus)}
 .yr{font-family:var(--mono);font-size:10px;fill:var(--fg-3)}
 .era-band{opacity:.9}
 .hoi-mark{fill:var(--accent)}
@@ -154,6 +174,11 @@ button.chip:hover{border-color:var(--accent);color:var(--accent-2)}
 .issue .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--accent);margin-bottom:4px}
 .issue p{margin:0;font-size:13.5px;line-height:1.7;color:var(--fg-2)}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.wiki{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:14px;font-size:13px}
+.wiki .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--fg-3)}
+.wiki a{display:inline-flex;align-items:center;gap:4px;text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent-2) 40%,transparent)}
+.wiki a:hover{border-bottom-color:var(--accent-2)}
+.wiki svg{width:10px;height:10px}
 .abtn{border:1px solid var(--line-2);background:var(--bg-3);border-radius:6px;padding:6px 11px;font-size:12.5px}
 .abtn:hover{border-color:var(--accent)}
 .abtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}

@@ -27,8 +27,13 @@
         <canvas id="overlay" aria-label="시대별 세계 지도. 드래그해 회전하고 나라를 눌러 정보를 봅니다." role="img"></canvas>
         <div class="hud" id="hud"></div>
         <div class="mapctl">
+          <div class="seg" role="group" aria-label="지도 모양">
+            <button id="pGlobe" aria-pressed="true">지구본</button>
+            <button id="pFlat" aria-pressed="false">평면</button>
+          </div>
           <div class="seg" role="group" aria-label="지도 색칠 기준">
-            <button id="mFac" aria-pressed="true">진영</button>
+            <button id="mNat" aria-pressed="true">국가</button>
+            <button id="mFac" aria-pressed="false">진영</button>
             <button id="mIde" aria-pressed="false">이념</button>
             <button id="mLeg" class="legbtn" aria-pressed="false" title="범례">범례</button>
           </div>
@@ -47,12 +52,14 @@
       <select class="speed" id="speed" aria-label="재생 속도">
         <option value="0.5">느리게 · 2초/월</option><option value="1" selected>보통 · 1초/월</option><option value="2">빠르게 · 2개월/초</option><option value="4">매우 빠르게 · 4개월/초</option>
       </select>
+      <select class="focus" id="focus" aria-label="재생할 사건 범위" title="고른 국가·대륙의 사건만 재생하고 지도에 표시합니다"></select>
       <div class="opts">
         <button class="opt" id="optPause" aria-pressed="true" title="재생 중 사건이 일어날 때마다 잠시 멈추고 카드를 보여줍니다">사건마다 멈춤</button>
         <button class="opt" id="optFollow" aria-pressed="true" title="재생 중 사건이 일어난 곳으로 지구본을 돌립니다">카메라 따라가기</button>
       </div>
       <div class="track" id="track">
         <svg id="tracksvg"></svg>
+        <div class="ttip" id="ttip" hidden></div>
         <input type="range" id="range" min="0" max="671.999" value="0" step="any" aria-label="시점 선택">
       </div>
     </section>
@@ -65,6 +72,7 @@
           <button class="abtn" id="clearSel">강조 해제</button>
         </div>
       </div>
+      <div class="roots-focus" id="rootsFocus" hidden></div>
       <div class="lanes" id="lanes"></div>
       <div class="roots-scroll"><svg id="rootsvg"></svg></div>
     </section>
