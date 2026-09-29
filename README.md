@@ -17,3 +17,6 @@
 ## 출처
 - 국경: André Ourednik, historical-basemaps (GPL-3.0) — https://github.com/aourednik/historical-basemaps
 - 사진: 위키백과 문서의 자유 라이선스 대표 이미지 (각 사진에 출처 링크 표시)
+
+  
+- 접속링크: https://yub815.github.io/world-chronicle/
