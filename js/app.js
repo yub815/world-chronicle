@@ -163,6 +163,7 @@ const S = {
   hist: [],
   playing: false, timer: null, t: 0,
   fills: {}, fillsSnap: null, tr: null, flash: null,
+  cities: true,
 };
 
 function computeState(){
@@ -304,11 +305,13 @@ function drawBase(now){
   for(const [f, sc] of stripes){ ctx.beginPath(); pathB(f); ctx.fillStyle = patternFor(ctx, sc); ctx.fill(); }
   // borders
   ctx.lineJoin = "round";
+  drawStates(ctx, R);
   ctx.beginPath(); pathB(S.occMesh); ctx.strokeStyle = COL.border; ctx.globalAlpha=.55; ctx.lineWidth = .7; ctx.setLineDash([2,2]); ctx.stroke();
   ctx.setLineDash([]); ctx.globalAlpha = 1;
   ctx.beginPath(); pathB(S.ownerMesh); ctx.strokeStyle = COL.border; ctx.lineWidth = Math.min(1.6, .8 + S.k*0.12); ctx.stroke();
   ctx.beginPath(); pathB(coastOf(S.snap)); ctx.strokeStyle = COL.coast; ctx.lineWidth = .7; ctx.stroke();
-  drawLabels(ctx);
+  const placed = drawLabels(ctx);
+  if(S.cities) drawCities(ctx, placed);
 }
 
 function drawLabels(ctx){
@@ -345,6 +348,75 @@ function drawLabels(ctx){
     ctx.strokeText(txt, xy[0], xy[1]);
     ctx.fillStyle = g.kind==="c" ? COL["fg-2"] : COL.fg; ctx.fillText(txt, xy[0], xy[1]);
     ctx.globalAlpha = 1;
+  }
+  return placed;
+}
+
+// 행정구역 경계: HOI4의 주 경계처럼 확대했을 때만 옅게 그린다. 화면 밖 선은 미리 걸러낸다
+const STATE_ARCS = topojson.mesh(STATES, STATES.objects.adm1).coordinates.map(line => {
+  const c = d3.geoCentroid({type:"LineString", coordinates: line});
+  let r = 0; for(const p of line) r = Math.max(r, d3.geoDistance(c, p));
+  return {line, c, r};
+});
+const STATE_R0 = 520, STATE_R1 = 850;    // 이 배율 사이에서 서서히 나타난다
+function drawStates(ctx, R){
+  if(R < STATE_R0) return;
+  const cen = center(), lines = [];
+  for(const a of STATE_ARCS){
+    if(!S.flat && d3.geoDistance(a.c, cen) > Math.PI/2 + a.r) continue;
+    const xy = proj(a.c), pad = a.r*R + 4;
+    if(!xy || xy[0] < -pad || xy[0] > S.w+pad || xy[1] < -pad || xy[1] > S.h+pad) continue;
+    lines.push(a.line);
+  }
+  if(!lines.length) return;
+  // 선이 짧고 촘촘해서 곡선 보정(리샘플링)은 끄고 그린다 — 훨씬 빠르다
+  const prec = proj.precision(); proj.precision(0);
+  ctx.beginPath(); pathB({type:"MultiLineString", coordinates: lines});
+  proj.precision(prec);
+  ctx.strokeStyle = COL.border; ctx.globalAlpha = .8 * Math.min(1, (R-STATE_R0)/(STATE_R1-STATE_R0));
+  ctx.lineWidth = .8; ctx.stroke(); ctx.globalAlpha = 1;
+}
+
+// 도시: 확대할수록 낮은 등급까지 보인다. 나라 이름과 겹치면 자리를 옮기고, 둘 곳이 없으면 뺀다
+const CITIES = CITY.map(([n, lo, la, tier, cap]) => ({nT: parseTL(n), p: [lo, la], tier, capT: cap ? parseTL(cap) : null}));
+const CITY_R = [0, 500, 900, 1500];   // 등급별로 보이기 시작하는 지도 배율(px/라디안)
+function drawCities(ctx, placed){
+  const R = proj.scale();
+  const hit = r => placed.some(q=> r[0]<q[2] && r[2]>q[0] && r[1]<q[3] && r[3]>q[1]);
+  const list = [];
+  for(const c of CITIES){
+    const name = at(c.nT, S.m).v; if(!name) continue;
+    const cap = !!c.capT && at(c.capT, S.m).v === "1";
+    const tier = cap ? Math.min(c.tier, 2) : c.tier;
+    if(R < CITY_R[tier] || !visible(c.p)) continue;
+    list.push({name, cap, tier, p: c.p});
+  }
+  list.sort((a,b)=> a.tier-b.tier || b.cap-a.cap);
+  ctx.textBaseline = "middle";
+  for(const c of list){
+    const xy = proj(c.p); if(!xy) continue;
+    const [x, y] = xy, dr = c.cap ? 3.4 : 2.3;
+    const dot = [x-dr-1, y-dr-1, x+dr+1, y+dr+1];
+    if(hit(dot)) continue;
+    const fs = c.tier===1 ? 12 : 11;
+    ctx.font = `${c.cap ? 600 : 500} ${fs}px 'IBM Plex Sans KR', sans-serif`;
+    const w = ctx.measureText(c.name).width, g = dr + 4;
+    // 오른쪽 → 왼쪽 → 위 → 아래 순서로 빈자리를 찾는다
+    const spots = [
+      [x+g, y, "left", [x+g-1, y-fs/2-1, x+g+w+2, y+fs/2+1]],
+      [x-g, y, "right", [x-g-w-2, y-fs/2-1, x-g+1, y+fs/2+1]],
+      [x, y-g-fs/2, "center", [x-w/2-2, y-g-fs-1, x+w/2+2, y-g+1]],
+      [x, y+g+fs/2, "center", [x-w/2-2, y+g-1, x+w/2+2, y+g+fs+1]],
+    ];
+    const s = spots.find(sp => !hit(sp[3])); if(!s) continue;
+    placed.push(dot, s[3]);
+    ctx.beginPath();
+    if(c.cap){ ctx.arc(x, y, dr, 0, Math.PI*2); ctx.fillStyle = COL.halo; ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = COL.fg; ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI*2); ctx.fillStyle = COL.fg; ctx.fill(); }
+    else { ctx.arc(x, y, dr, 0, Math.PI*2); ctx.fillStyle = COL.fg; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = COL.halo; ctx.stroke(); }
+    ctx.textAlign = s[2];
+    ctx.lineWidth = 3; ctx.strokeStyle = COL.halo; ctx.strokeText(c.name, s[0], s[1]);
+    ctx.fillStyle = c.cap ? COL.fg : COL["fg-2"]; ctx.fillText(c.name, s[0], s[1]);
   }
 }
 
@@ -555,6 +627,12 @@ $("#pFlat").onclick = () => setFlat(true);
 $("#mNat").onclick = () => setMode("n");
 $("#mFac").onclick = () => setMode("f");
 $("#mIde").onclick = () => setMode("i");
+$("#mCity").onclick = () => setCities(!S.cities);
+function setCities(on){
+  S.cities = on; $("#mCity").setAttribute("aria-pressed", on);
+  try { localStorage.setItem("wc-cities", on ? "1" : "0"); } catch(e){}
+  drawAll();
+}
 $("#mLeg").onclick = () => { const l=$("#legend"); const on=!l.classList.contains("show"); l.classList.toggle("show",on); $("#mLeg").setAttribute("aria-pressed", on); };
 function setMode(m){
   S.mode = m;
@@ -1256,6 +1334,7 @@ let lastRootsW = 0;
 new ResizeObserver(()=>{ const w=$(".roots-scroll").clientWidth; if(Math.abs(w-lastRootsW)>2){ lastRootsW=w; renderRoots(); } }).observe($(".roots-scroll"));
 sizeGlobe();
 try { if(localStorage.getItem("wc-flat")==="1") setFlat(true); } catch(e){}
+try { if(localStorage.getItem("wc-cities")==="0") setCities(false); } catch(e){}
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ renderRoots(); drawAll(); });
 window.__app = {S, setDate, select, setT, setPlaying};
 (window.requestIdleCallback||setTimeout)(()=>loadPhotos());

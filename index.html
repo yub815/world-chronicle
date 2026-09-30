@@ -33,6 +33,7 @@
             <button id="pGlobe" aria-pressed="true">지구본</button>
             <button id="pFlat" aria-pressed="false">평면</button>
           </div>
+          <div class="seg"><button id="mCity" aria-pressed="true" title="도시 표시 (확대할수록 더 많이 보입니다)">도시</button></div>
           <div class="seg" role="group" aria-label="지도 색칠 기준">
             <button id="mNat" aria-pressed="true">국가</button>
             <button id="mFac" aria-pressed="false">진영</button>
@@ -79,7 +80,7 @@
       <div class="roots-scroll"><svg id="rootsvg"></svg></div>
     </section>
     <footer>
-      <p>국경 데이터: André Ourednik, <a href="https://github.com/aourednik/historical-basemaps" target="_blank" rel="noopener">historical-basemaps</a> (GPL-3.0)의 1938·1945·1960·1994년 지도를 바탕으로, 1936–1991년 사이의 병합·점령·내전 전선·독립 시점을 월 단위로 덧입혔습니다. 스페인 내전, 독소전쟁, 중일전쟁, 국공내전, 한국전쟁의 점령 범위는 흐름을 보여주기 위한 근사치입니다.</p>
+      <p>국경 데이터: André Ourednik, <a href="https://github.com/aourednik/historical-basemaps" target="_blank" rel="noopener">historical-basemaps</a> (GPL-3.0)의 1938·1945·1960·1994년 지도를 바탕으로, 1936–1991년 사이의 병합·점령·내전 전선·독립 시점을 월 단위로 덧입혔습니다. 확대하면 보이는 나라 안쪽의 옅은 행정구역 선은 <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>(공개 도메인)의 현대 경계로, 당시 구역과 다를 수 있습니다. 스페인 내전, 독소전쟁, 중일전쟁, 국공내전, 한국전쟁의 점령 범위는 흐름을 보여주기 위한 근사치입니다.</p>
       <p>진영은 공식 동맹과 참전 시점 기준이며, 이념 분류는 하츠 오브 아이언 4의 네 가지 이념(민주주의·파시즘·공산주의·비동맹)을 빌려 단순화했습니다. 역사적 해석이 갈리는 대목은 각 사건의 '쟁점'에 따로 적었습니다.</p>
     </footer>
   </main>
@@ -104,6 +105,8 @@
 <script src="data/people-2.js"></script>
 <script src="data/parties.js"></script>
 <script src="data/wiki-photos.js"></script>
-<script src="js/app.js?v=5"></script>
+<script src="data/cities.js"></script>
+<script src="data/states.js"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>

@@ -25,6 +25,8 @@
 - `data/people-1.js`, `people-2.js` — `id: [이름, 원어, 생몰, 국가id, 역할, 소개, 정당id]`
 - `data/parties.js` — `GRP[id] = [이름, 종류, 국가id, 이념, 활동기간, 설명]`
 - `data/wiki-photos.js` — `WIKI[사건id] = "English Wikipedia article title"`
+- `data/cities.js` — `CITY = [[이름 연표, 경도, 위도, 등급 1–3, 수도 연표], ...]`. 이름 연표로 개명 표시(첫 칸이 비면 그 전엔 숨김), 수도 연표 `"1|YYYY-MM:0"`. 등급이 높을수록 더 확대해야 보이고, 그 시점의 수도는 최소 2등급. `drawCities()`가 나라 이름과 겹치지 않게 배치
+- `data/states.js` — `STATES` TopoJSON. 나라 안쪽 행정구역(주·성·도) 경계선. Natural Earth 1:10m admin-1 lines(공개 도메인)를 mapshaper로 8% 단순화·병합한 것. **현대 경계**라 당시와 다를 수 있음(하단에 명시). `drawStates()`가 확대 시(STATE_R0–R1)에만 옅게 그림
 
 ## 데이터 수정 규칙
 - 사건 추가 시: id 고유, 원인(k)은 반드시 더 이른 날짜의 기존 사건, c/p/g의 id는 각 파일에 존재해야 함. 새 인물·정당도 함께 추가
