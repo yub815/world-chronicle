@@ -58,7 +58,7 @@ a{color:var(--accent-2)}
 .globe-wrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 /* 인쇄한 지도처럼 채도를 낮추고 살짝 누렇게. 지도 색을 쓰는 범례·칩 색 점도 같은 필터로 맞춘다 (범례 마지막 줄 = 사건 점은 제외) */
 #base,.sw,.chip .dot{filter:var(--map-filter)}
-.legend .row:last-child .sw{filter:none}
+.legend .leg-body .row:last-child .sw{filter:none}
 #overlay{cursor:grab}
 #overlay.dragging{cursor:grabbing}
 #overlay.pointing{cursor:pointer}
@@ -80,6 +80,15 @@ a{color:var(--accent-2)}
 .legend .sw{width:14px;height:10px;border-radius:2px;flex:none;border:1px solid var(--border)}
 .legend .n{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--fg-3)}
 .legend .sep{height:1px;background:var(--line);margin:3px 0}
+.leg-body{display:grid;gap:3px}
+.leg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;background:none;border:0;padding:0 0 4px;margin-bottom:2px;border-bottom:1px solid var(--line);font-size:11.5px;font-weight:600;color:var(--fg-2);text-align:left}
+.leg-head:hover{color:var(--fg)}
+.leg-tg{font-family:var(--mono);font-size:13px;line-height:1}
+@media (min-width: 721px){
+  .legend.min{width:auto;padding:5px 10px}
+  .legend.min .leg-head{padding:0;margin:0;border:0;gap:12px}
+  .legend.min .leg-body{display:none}
+}
 .hint{position:absolute;left:4px;bottom:12px;font-size:12px;color:var(--fg-3);pointer-events:none}
 .zoombtns{position:absolute;right:4px;bottom:12px;display:flex;flex-direction:column;gap:4px}
 .zoombtns button{width:32px;height:32px;border-radius:2px;background:var(--bg-3);border:1px solid var(--line-2);font-size:16px;line-height:1;color:var(--fg-2)}
@@ -260,6 +269,7 @@ footer p{margin:0 0 6px;max-width:90ch}
   .seg{padding:2px}
   .seg button{padding:4px 8px;font-size:11.5px}
   .legend{display:none;left:0;right:auto;bottom:calc(100% + 6px)}
+  .leg-head{display:none}
   .seg .legbtn{display:inline-block}
   .legend.show{display:grid}
   .hint{display:none}
