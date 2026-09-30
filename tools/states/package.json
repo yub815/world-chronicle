@@ -1,0 +1,13 @@
+{
+  "name": "world-chronicle-states",
+  "private": true,
+  "type": "module",
+  "description": "data/states.js 빌드 도구 (행정구역 경계선 + 유효 기간)",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": {
+    "d3-geo": "^3.1.1",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1",
+    "topojson-simplify": "^3.0.3"
+  }
+}
