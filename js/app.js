@@ -612,9 +612,8 @@ function renderLegend(){
   }
   let rows, cA, cB;
   if(S.mode==="n"){
-    // 국가 모드: 지금 가장 넓은 나라 10개만 (식민지·점령지 포함 면적)
-    rows = Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,10)
-      .map(id=>`<div class="row"><span class="sw" style="background:${nationColor(id)}"></span><b>${esc(shortAt(id,S.m))}</b></div>`).join("");
+    // 국가 모드: 나라 색은 지도 이름표로 충분하니 범례엔 칠하는 규칙만 둔다
+    rows = "";
     cA = nationColor("ENG"); cB = nationColor("GER");
   } else {
     const names = S.mode==="f" ? FACN : IDEN, cols = S.mode==="f" ? COL.f : COL.i;
@@ -623,11 +622,21 @@ function renderLegend(){
     cA = COL.f.AL; cB = COL.f.CO;
   }
   const cmix = d3.interpolateRgb(cA, COL["colony-mix"])(S.mode==="n" ? .35 : .48);
-  $("#legend").innerHTML = rows + `<div class="sep"></div>
+  $("#legend").innerHTML = `<button class="leg-head" type="button" aria-expanded="${!S.legMin}" title="범례 접기·펴기">범례<span class="leg-tg" aria-hidden="true">${S.legMin ? "+" : "−"}</span></button>
+    <div class="leg-body">${rows ? rows + `<div class="sep"></div>` : ""}
     <div class="row"><span class="sw" style="background:${cmix}"></span>식민지·보호령</div>
     <div class="row"><span class="sw" style="background:repeating-linear-gradient(135deg,${cB} 0 3px,${cA} 3px 6px)"></span>점령지 (빗금 = 원래 주인)</div>
-    <div class="row"><span class="sw" style="background:${COL.accent};border-radius:50%;width:10px;height:10px"></span>최근 사건</div>`;
+    <div class="row"><span class="sw" style="background:${COL.accent};border-radius:50%;width:10px;height:10px"></span>최근 사건</div></div>`;
+  $("#legend").classList.toggle("min", S.legMin);
 }
+// 데스크톱: 범례 제목을 누르면 접고 편다 (다음 방문에도 기억)
+S.legMin = (()=>{ try { return localStorage.getItem("wc-legend") === "min"; } catch(e){ return false; } })();
+$("#legend").addEventListener("click", ev => {
+  if(!ev.target.closest(".leg-head")) return;
+  S.legMin = !S.legMin;
+  try { localStorage.setItem("wc-legend", S.legMin ? "min" : "open"); } catch(e){}
+  renderLegend();
+});
 $("#pGlobe").onclick = () => setFlat(false);
 $("#pFlat").onclick = () => setFlat(true);
 $("#mNat").onclick = () => setMode("n");
