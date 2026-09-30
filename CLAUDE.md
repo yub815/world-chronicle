@@ -6,8 +6,8 @@
 사용자와는 한국어로 대화한다.
 
 ## 구조
-- `index.html` — 마크업. 라이브러리: d3 7.9.0(cdnjs), topojson-client 3.1.0(jsdelivr), Google Fonts(Black Han Sans, IBM Plex Sans KR, IBM Plex Mono)
-- `css/style.css` — 디자인 토큰(:root). 기본 다크, `prefers-color-scheme: light`와 `[data-theme]`으로 라이트 테마. 지도 색도 여기(`--f-XX` 진영, `--i-X` 이념)
+- `index.html` — 마크업. 라이브러리: d3 7.9.0(cdnjs), topojson-client 3.1.0(jsdelivr), Google Fonts(Hahmlet·Nanum Myeongjo 제목·요약문, IBM Plex Sans KR 본문, IBM Plex Mono 숫자)
+- `css/style.css` — 디자인 토큰(:root). '옛 지도책' 모양: 종이 바탕·먹색 글자·적갈색 강조, 밝은 테마 하나만 둔다(2026-09 사용자 선택). 지형 canvas(`#base`)에 CSS filter로 채도를 낮춘다. 한글 라벨엔 고정폭 글꼴·자간을 쓰지 않는다. 지도 색도 여기(`--f-XX` 진영, `--i-X` 이념)
 - `js/app.js` — 전체 동작 (IIFE 하나). 주요 부분:
   - 시간: 월 인덱스 `m` (0 = 1936-01, 671 = 1991-12), 재생용 실수 `S.t`. `mi("YYYY-MM")`로 변환
   - 지구본: canvas 두 장(`#base` 지형, `#overlay` 마커·강조). d3.geoOrthographic, d3.zoom으로 회전/확대
