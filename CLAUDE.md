@@ -17,6 +17,7 @@
   - "사건의 뿌리": SVG. 레인 7개(AM, EU, GL, EE, ME, SA, EA), y는 날짜 + 같은 레인 최소 간격. 선택 시 직접 원인·결과만 강조
   - 사진: `data/wiki-photos.js`의 영어 위키백과 문서명으로 런타임에 pageimages API(pilicense=free) 호출
 - `data/borders.js` — `GEO` TopoJSON (객체 s38/s45/s60/s94 = 1936–45.8 / 1945.9–59 / 1960–90 / 1991 스냅샷). 각 도형의 `properties.k`가 영토 키. **직접 수정 금지** (원본: historical-basemaps, GPL-3.0; 점령·전선 구역은 손으로 그린 마스크로 분할)
+  - 예외(2026-09, 사용자 허락): 마스크로 자를 때 엉뚱한 키에 붙은 조각 43개를 좌표 변경 없이 올바른 키로 옮겼다(topojson `mergeArcs`로 합쳐 가짜 해안선 없음). 예: POL_W 동쪽 띠 → POL_E, 내몽골 동부 CHI → MAN, 쿠웨이트 JOR → KUW(s38에 새로 만듦). 다시 할 일이 생기면 좌표는 건드리지 말고 조각 소속만 바꾼다
 - `data/territories.js` — `TERR[영토키] = "NAT#항목|YYYY-MM:항목|..."`. 항목 = `주인[/점령국][:c]` (`:c` = 식민지·보호령, `/X` = X가 군사 점령). NAT = 그 땅의 본래 민족/국가. 없는 키는 키 자체가 주인
 - `data/countries.js` — `ENT[id]`: `n` 짧은 이름, `sn` 짧은 이름 연표, `nm` 정식 이름 연표, `h:1` HOI4 태그 여부, `f` 진영 연표, `i` 이념 연표, `L` 지도자 `"YYYY-MM|이름|직함[|b|c]"`(b·c = 두 번째·세 번째 칸), `pt` 집권 정당 연표, `end` 소멸 시점
   - 진영 코드: AX 추축국, AA 추축 협력국, AL 연합국, CO 코민테른·소련 진영, NE 중립, WE 서방 진영, NA NATO, WP 바르샤바 조약, EB 친소 공산권, CN 중국 노선 공산권, NM 비동맹
