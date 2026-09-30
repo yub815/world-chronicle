@@ -10,6 +10,7 @@
 // 두 단위의 라벨이 다르고 당시 나라가 같으면 그 사이 선을 그 달에 그린다(나라 경계는 borders.js가 그린다).
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { geoCentroid, geoContains, geoDistance } from "d3-geo";
 import { topology } from "topojson-server";
 import { mesh } from "topojson-client";
@@ -17,7 +18,7 @@ import { presimplify, simplify, quantile, sphericalTriangleArea } from "topojson
 import { labelFor, FINE } from "./rules/index.mjs";
 import { M_END, ym, REF } from "./rules/util.mjs";
 
-const HERE = path.dirname(new URL(import.meta.url).pathname);
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CACHE = path.join(HERE, ".cache");
 const OUT = path.join(HERE, "../../data/states.js");
 const KEEP = +(process.env.KEEP || 0.12);   // 단순화 후 NE 점 중 남길 비율. 세부 원본에도 같은 무게 기준을 쓴다
