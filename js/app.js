@@ -353,16 +353,22 @@ function drawLabels(ctx){
 }
 
 // 행정구역 경계: HOI4의 주 경계처럼 확대했을 때만 옅게 그린다. 화면 밖 선은 미리 걸러낸다
-const STATE_ARCS = topojson.mesh(STATES, STATES.objects.adm1).coordinates.map(line => {
-  const c = d3.geoCentroid({type:"LineString", coordinates: line});
-  let r = 0; for(const p of line) r = Math.max(r, d3.geoDistance(c, p));
-  return {line, c, r};
+// 선마다 t = "YYYY-MM|YYYY-MM,..." 그 구역 경계가 있던 기간(끝 달 제외) — 그 달에 없던 선은 그리지 않는다
+const STATE_ARCS = STATES.objects.adm1.geometries.flatMap(g => {
+  const t = g.properties.t.split(",").map(r => r.split("|").map(mi));
+  return topojson.mesh(STATES, g).coordinates.map(line => {
+    const c = d3.geoCentroid({type:"LineString", coordinates: line});
+    let r = 0; for(const p of line) r = Math.max(r, d3.geoDistance(c, p));
+    return {line, c, r, t};
+  });
 });
+const stateOn = (a, m) => a.t.some(([s, e]) => m >= s && m < e);
 const STATE_R0 = 520, STATE_R1 = 850;    // 이 배율 사이에서 서서히 나타난다
 function drawStates(ctx, R){
   if(R < STATE_R0) return;
   const cen = center(), lines = [];
   for(const a of STATE_ARCS){
+    if(!stateOn(a, S.m)) continue;
     if(!S.flat && d3.geoDistance(a.c, cen) > Math.PI/2 + a.r) continue;
     const xy = proj(a.c), pad = a.r*R + 4;
     if(!xy || xy[0] < -pad || xy[0] > S.w+pad || xy[1] < -pad || xy[1] > S.h+pad) continue;
